@@ -1,0 +1,412 @@
+#!/usr/bin/env python3
+"""
+OMA Agent Service Installer
+
+Quick install:
+    curl -sSL https://raw.githubusercontent.com/OxSci-AI/oma-scaffold/main/install.py | python3 -
+
+This script:
+1. Downloads the OMA scaffold template from GitHub
+2. Prompts for service name and agent name
+3. Creates a new OMA agent service
+4. Initializes git repository
+"""
+
+import os
+import re
+import shutil
+import sys
+import tempfile
+import urllib.request
+import zipfile
+from pathlib import Path
+
+
+GITHUB_REPO = "OxSci-AI/oma-scaffold"
+GITHUB_BRANCH = "main"
+GITHUB_ZIP_URL = f"https://github.com/{GITHUB_REPO}/archive/refs/heads/{GITHUB_BRANCH}.zip"
+
+
+def get_input(prompt: str, validator=None) -> str:
+    """Get user input with optional validation."""
+    while True:
+        value = input(prompt).strip()
+        if not value:
+            print("  Error: Input cannot be empty. Please try again.")
+            continue
+        if validator and not validator(value):
+            continue
+        return value
+
+
+def validate_service_name(name: str) -> bool:
+    """Validate service name format."""
+    if not re.match(r"^[a-z][a-z0-9-]*$", name):
+        print(
+            "  Error: Service name must start with a letter and contain only lowercase letters, numbers, and hyphens."
+        )
+        return False
+    return True
+
+
+def validate_agent_name(name: str) -> bool:
+    """Validate agent name format."""
+    if not re.match(r"^[a-z][a-z0-9_]*$", name):
+        print(
+            "  Error: Agent name must start with a letter and contain only lowercase letters, numbers, and underscores."
+        )
+        return False
+    return True
+
+
+def to_pascal_case(name: str) -> str:
+    """Convert snake_case or kebab-case to PascalCase."""
+    parts = re.split(r"[_-]", name)
+    return "".join(word.capitalize() for word in parts)
+
+
+def download_and_extract_scaffold(temp_dir: Path) -> Path:
+    """Download and extract scaffold from GitHub."""
+    print("Downloading scaffold from GitHub...")
+
+    zip_path = temp_dir / "scaffold.zip"
+
+    try:
+        # Download zip file
+        with urllib.request.urlopen(GITHUB_ZIP_URL) as response:
+            with open(zip_path, 'wb') as out_file:
+                out_file.write(response.read())
+
+        print("Extracting files...")
+
+        # Extract zip file
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(temp_dir)
+
+        # Find extracted directory (should be oma-scaffold-main or similar)
+        extracted_dirs = [d for d in temp_dir.iterdir() if d.is_dir() and d.name.startswith('oma-scaffold')]
+
+        if not extracted_dirs:
+            raise Exception("Could not find extracted scaffold directory")
+
+        return extracted_dirs[0]
+
+    except Exception as e:
+        print(f"❌ Failed to download scaffold: {e}")
+        print("\nAlternative installation method:")
+        print("1. Clone the repository:")
+        print(f"   git clone https://github.com/{GITHUB_REPO}.git")
+        print("2. Run setup.py:")
+        print("   cd oma-scaffold && python setup.py")
+        sys.exit(1)
+
+
+def setup_service():
+    """Main setup function."""
+    print("=" * 70)
+    print("OMA Agent Service Installer")
+    print("=" * 70)
+    print()
+
+    # Get service name
+    print("Step 1: Service Configuration")
+    print("-" * 70)
+    service_name = get_input(
+        "Enter service name (e.g., 'document-processor'): ", validate_service_name
+    )
+    folder_name = f"oma-{service_name}"
+    description = f"OMA {service_name.replace('-', ' ').title()} Service"
+
+    print(f"\n  → Service folder: {folder_name}")
+    print(f"  → Description: {description}")
+    print()
+
+    # Get agent name
+    print("Step 2: Agent Configuration")
+    print("-" * 70)
+    agent_name = get_input(
+        "Enter agent name (e.g., 'document_processor'): ", validate_agent_name
+    )
+    agent_class = to_pascal_case(agent_name)
+    agent_file = f"{agent_name}.py"
+
+    print(f"\n  → Agent class: {agent_class}")
+    print(f"  → Agent file: app/agents/{agent_file}")
+    print()
+
+    # Confirm setup
+    print("Step 3: Confirmation")
+    print("-" * 70)
+    print(f"Service Name:  {folder_name}")
+    print(f"Description:   {description}")
+    print(f"Agent Name:    {agent_name}")
+    print(f"Agent Class:   {agent_class}")
+    print()
+
+    confirm = input("Proceed with setup? (y/n): ").strip().lower()
+    if confirm != "y":
+        print("\nSetup cancelled.")
+        return
+
+    print()
+    print("Step 4: Creating Project")
+    print("-" * 70)
+
+    target_dir = Path.cwd() / folder_name
+
+    # Check if target directory already exists
+    if target_dir.exists():
+        print(f"\n❌ Error: Directory '{folder_name}' already exists!")
+        return
+
+    # Create temporary directory for download
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+
+        try:
+            # Download scaffold
+            scaffold_dir = download_and_extract_scaffold(temp_path)
+
+            # Create target directory
+            print(f"Creating directory: {folder_name}")
+            target_dir.mkdir(parents=True, exist_ok=True)
+
+            # Copy all files and directories except setup.py and install.py
+            print("Copying template files...")
+            for item in scaffold_dir.iterdir():
+                if item.name in ["setup.py", "install.py", ".git", "__pycache__", ".DS_Store", "README.md"]:
+                    continue
+
+                dest = target_dir / item.name
+                if item.is_file():
+                    shutil.copy2(item, dest)
+                elif item.is_dir():
+                    shutil.copytree(item, dest)
+
+            # Update pyproject.toml
+            print("Configuring pyproject.toml...")
+            pyproject_path = target_dir / "pyproject.toml"
+            content = pyproject_path.read_text()
+            content = content.replace('name = "oma-service-template"', f'name = "{folder_name}"')
+            content = content.replace('description = "OMA Agent Service Template"', f'description = "{description}"')
+            pyproject_path.write_text(content)
+
+            # Create agent file from template
+            print(f"Creating agent file: app/agents/{agent_file}")
+            agent_template_path = target_dir / "app" / "agents" / "agent_template.py"
+            agent_path = target_dir / "app" / "agents" / agent_file
+
+            agent_content = agent_template_path.read_text()
+            agent_content = agent_content.replace("AgentTemplate", agent_class)
+            agent_content = agent_content.replace('agent_role: str = "agent_template"', f'agent_role: str = "{agent_name}"')
+            agent_content = agent_content.replace(
+                'name="Agent Template"', f'name="{agent_class}"'
+            )
+            agent_content = agent_content.replace(
+                'description="Template agent for demonstration purposes"',
+                f'description="{agent_class} agent"',
+            )
+
+            agent_path.write_text(agent_content)
+
+            # Remove template file
+            agent_template_path.unlink()
+
+            # Create __init__.py for agents
+            agents_init = target_dir / "app" / "agents" / "__init__.py"
+            agents_init.write_text(f'from .{agent_name} import {agent_class}\n\n__all__ = ["{agent_class}"]\n')
+
+            # Create __init__.py for app
+            app_init = target_dir / "app" / "__init__.py"
+            app_init.touch()
+
+            # Update main.py
+            print("Updating main.py...")
+            main_path = target_dir / "app" / "core" / "main.py"
+            main_content = main_path.read_text()
+
+            # Add import after the TODO comment
+            import_line = f"from app.agents.{agent_name} import {agent_class}"
+            main_content = main_content.replace(
+                "# TODO: Add your agent imports here\n# Example: from app.agents.my_agent import MyAgent",
+                f"# Agent imports\n{import_line}",
+            )
+
+            # Add to agent_executors
+            main_content = main_content.replace(
+                "agent_executors = [\n        # Example: MyAgent,\n    ]",
+                f"agent_executors = [\n        {agent_class},\n    ]",
+            )
+
+            main_path.write_text(main_content)
+
+            # Update test_agents.py
+            print("Updating test_agents.py...")
+            test_path = target_dir / "tests" / "test_agents.py"
+            test_content = test_path.read_text()
+
+            # Add import
+            import_line = f"from app.agents.{agent_name} import {agent_class}"
+            test_content = test_content.replace(
+                "# Import your agent classes here\n# Example:\n# from app.agents.my_agent import MyAgent",
+                f"# Import agent classes\n{import_line}",
+            )
+
+            # Add test function
+            test_function = f'''
+
+@agent_test(sample_pdf="sample/sample.pdf")
+def test_{agent_name}():
+    """Test {agent_class} - processes PDF documents"""
+    return {agent_class}
+'''
+            test_content = test_content.replace(
+                "# ============================================================================\n# Single Agent Tests\n# ============================================================================\n\n",
+                f"# ============================================================================\n# Single Agent Tests\n# ============================================================================\n{test_function}\n",
+            )
+
+            # Add to test_map
+            test_content = test_content.replace(
+                "test_map = {\n        # Add your test functions here\n        # Example:\n        # \"my_agent\": test_my_agent,\n        # \"my_agent_with_input\": test_my_agent_with_input,\n    }",
+                f'test_map = {{\n        "{agent_name}": test_{agent_name},\n    }}',
+            )
+
+            test_path.write_text(test_content)
+
+            # Create sample directory
+            print("Creating sample directory...")
+            sample_dir = target_dir / "sample"
+            sample_dir.mkdir(exist_ok=True)
+            (sample_dir / ".gitkeep").touch()
+
+            # Create README.md
+            readme_content = f"""# {folder_name}
+
+{description}
+
+## Quick Start
+
+### 1. Configure AWS CodeArtifact
+
+```bash
+./entrypoint-dev.sh
+```
+
+### 2. Install Dependencies
+
+```bash
+poetry install
+```
+
+### 3. Run Tests
+
+```bash
+python tests/test_agents.py --test {agent_name}
+```
+
+### 4. Run Service
+
+```bash
+poetry run uvicorn app.core.main:app --reload --port 8080
+```
+
+## Documentation
+
+For detailed documentation, see: https://github.com/{GITHUB_REPO}
+"""
+            readme_path = target_dir / "README.md"
+            readme_path.write_text(readme_content)
+
+            # Initialize git repository
+            print("Initializing git repository...")
+            os.chdir(target_dir)
+            os.system("git init")
+
+            # Create .gitignore
+            gitignore_content = """# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Poetry
+poetry.lock
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+"""
+            gitignore_path = target_dir / ".gitignore"
+            gitignore_path.write_text(gitignore_content)
+
+            print()
+            print("=" * 70)
+            print("✅ Setup Complete!")
+            print("=" * 70)
+            print()
+            print(f"Your OMA agent service has been created in: {folder_name}")
+            print()
+            print("Next steps:")
+            print()
+            print(f"  1. cd {folder_name}")
+            print(f"  2. ./entrypoint-dev.sh          # Configure AWS CodeArtifact")
+            print(f"  3. poetry install                # Install dependencies")
+            print(f"  4. Edit app/agents/{agent_file}  # Implement your agent logic")
+            print(f"  5. python tests/test_agents.py --test {agent_name}  # Test your agent")
+            print()
+            print(f"For more information, see: https://github.com/{GITHUB_REPO}")
+            print()
+
+        except Exception as e:
+            print(f"\n❌ Error during setup: {e}")
+            import traceback
+            traceback.print_exc()
+            if target_dir.exists():
+                print(f"\nCleaning up {folder_name}...")
+                shutil.rmtree(target_dir)
+            return
+
+
+if __name__ == "__main__":
+    try:
+        setup_service()
+    except KeyboardInterrupt:
+        print("\n\nSetup cancelled by user.")
+        sys.exit(1)
