@@ -268,9 +268,47 @@ def get_input(prompt: str, validator=None) -> str:
         return value
 
 
+def normalize_service_name(name: str) -> str:
+    """Normalize service name: lowercase, convert spaces/special chars to hyphens."""
+    # Convert to lowercase
+    normalized = name.lower().strip()
+    # Replace spaces and other non-alphanumeric characters (except hyphens) with hyphens
+    normalized = re.sub(r"[^a-z0-9-]+", "-", normalized)
+    # Remove leading/trailing hyphens and multiple consecutive hyphens
+    normalized = re.sub(r"-+", "-", normalized).strip("-")
+    # Ensure it starts with a letter
+    if normalized and not normalized[0].isalpha():
+        # Find first letter and take from there
+        match = re.search(r"[a-z]", normalized)
+        if match:
+            normalized = normalized[match.start() :]
+        else:
+            normalized = "service-" + normalized
+    return normalized or "service"
+
+
+def normalize_agent_name(name: str) -> str:
+    """Normalize agent name: lowercase, convert spaces/hyphens/special chars to underscores."""
+    # Convert to lowercase
+    normalized = name.lower().strip()
+    # Replace spaces, hyphens, and other non-alphanumeric characters with underscores
+    normalized = re.sub(r"[^a-z0-9_]+", "_", normalized)
+    # Remove leading/trailing underscores and multiple consecutive underscores
+    normalized = re.sub(r"_+", "_", normalized).strip("_")
+    # Ensure it starts with a letter
+    if normalized and not normalized[0].isalpha():
+        # Find first letter and take from there
+        match = re.search(r"[a-z]", normalized)
+        if match:
+            normalized = normalized[match.start() :]
+        else:
+            normalized = "agent_" + normalized
+    return normalized or "agent"
+
+
 def validate_service_name(name: str) -> bool:
-    """Validate service name format."""
-    if not re.match(r"^[a-z][a-z0-9-]*$", name):
+    """Validate service name format (after normalization)."""
+    if not name or not re.match(r"^[a-z][a-z0-9-]*$", name):
         print(
             "  Error: Service name must start with a letter and contain only lowercase letters, numbers, and hyphens."
         )
@@ -279,8 +317,8 @@ def validate_service_name(name: str) -> bool:
 
 
 def validate_agent_name(name: str) -> bool:
-    """Validate agent name format."""
-    if not re.match(r"^[a-z][a-z0-9_]*$", name):
+    """Validate agent name format (after normalization)."""
+    if not name or not re.match(r"^[a-z][a-z0-9_]*$", name):
         print(
             "  Error: Agent name must start with a letter and contain only lowercase letters, numbers, and underscores."
         )
@@ -373,13 +411,25 @@ def setup_service(
     print("Step 1: Service Configuration")
     print("-" * 70)
     if service_name is None:
-        service_name = get_input(
-            "Enter service name (e.g., 'document-processor'): ", validate_service_name
+        raw_service_name = get_input(
+            "Enter service name (e.g., 'document-processor'): "
         )
-    else:
+        service_name = normalize_service_name(raw_service_name)
         if not validate_service_name(service_name):
             sys.exit(1)
-        print(f"Service name: {service_name}")
+        if raw_service_name != service_name:
+            print(f"  → Normalized to: {service_name}")
+    else:
+        original_service_name = service_name
+        service_name = normalize_service_name(service_name)
+        if not validate_service_name(service_name):
+            sys.exit(1)
+        if original_service_name != service_name:
+            print(
+                f"Service name: {original_service_name} → normalized to: {service_name}"
+            )
+        else:
+            print(f"Service name: {service_name}")
 
     folder_name = f"oma-{service_name}"
     description = f"OMA {service_name.replace('-', ' ').title()} Service"
@@ -392,13 +442,21 @@ def setup_service(
     print("Step 2: Agent Configuration")
     print("-" * 70)
     if agent_name is None:
-        agent_name = get_input(
-            "Enter agent name (e.g., 'document_processor'): ", validate_agent_name
-        )
-    else:
+        raw_agent_name = get_input("Enter agent name (e.g., 'document_processor'): ")
+        agent_name = normalize_agent_name(raw_agent_name)
         if not validate_agent_name(agent_name):
             sys.exit(1)
-        print(f"Agent name: {agent_name}")
+        if raw_agent_name != agent_name:
+            print(f"  → Normalized to: {agent_name}")
+    else:
+        original_agent_name = agent_name
+        agent_name = normalize_agent_name(agent_name)
+        if not validate_agent_name(agent_name):
+            sys.exit(1)
+        if original_agent_name != agent_name:
+            print(f"Agent name: {original_agent_name} → normalized to: {agent_name}")
+        else:
+            print(f"Agent name: {agent_name}")
 
     agent_class = to_pascal_case(agent_name)
     agent_file = f"{agent_name}.py"
