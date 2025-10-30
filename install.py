@@ -675,59 +675,7 @@ For detailed documentation, see: https://github.com/{GITHUB_REPO}
             os.chdir(target_dir)
             os.system("git init")
 
-            # Create .gitignore
-            gitignore_content = """# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
-venv/
-env/
-ENV/
-
-# Poetry
-poetry.lock
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Environment
-.env
-.env.local
-"""
-            gitignore_path = target_dir / ".gitignore"
-            gitignore_path.write_text(gitignore_content)
+            # Note: .gitignore is copied from template, no need to create it here
 
             print()
             print("=" * 70)
