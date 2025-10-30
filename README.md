@@ -257,10 +257,7 @@ This template integrates:
 - **oxsci-oma-core**: Core OMA agent functionality
 - **oxsci-shared-core**: Shared utilities and configuration
 
-## Contributing
-
-[To be added - Guidelines for contributing to your service]
 
 ## License
 
-[To be added - Your license information]
+© 2025 OxSci.AI. All rights reserved.
