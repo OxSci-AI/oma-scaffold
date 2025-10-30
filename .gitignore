@@ -20,6 +20,14 @@ wheels/
 .installed.cfg
 *.egg
 
+# log
+logs/
+*.log
+simulation_outputs/*
+temp_files/*
+mock_data/** 
+tests/sample/*.json
+
 # Virtual environments
 venv/
 env/
