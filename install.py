@@ -626,10 +626,10 @@ def test_{agent_name}():
 
             test_path.write_text(test_content)
 
-            # Create sample directory
+            # Create sample directory (in tests directory, relative to test file)
             print("Creating sample directory...")
-            sample_dir = target_dir / "sample"
-            sample_dir.mkdir(exist_ok=True)
+            sample_dir = target_dir / "tests" / "sample"
+            sample_dir.mkdir(parents=True, exist_ok=True)
             (sample_dir / ".gitkeep").touch()
 
             # Create README.md

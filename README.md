@@ -171,7 +171,9 @@ oma-{service-name}/
 │   └── tools/
 │       └── __init__.py           # Custom tools (if needed)
 ├── tests/
-│   └── test_agents.py            # Agent tests
+│   ├── test_agents.py            # Agent tests
+│   └── sample/                   # Sample test files (PDFs, etc.)
+│       └── .gitkeep
 ├── .vscode/
 │   └── extensions.json           # Recommended VS Code extensions
 ├── Dockerfile                     # Multi-stage Docker build
