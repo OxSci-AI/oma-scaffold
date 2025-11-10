@@ -4,8 +4,8 @@
       "service_name": "mcp-article-processing-prod",
       "enabled": true
     },
-    "journal-insight-service": {
-      "service_name": "journal-insight-service-prod",
+    "mcp-journal-insight": {
+      "service_name": "mcp-journal-insight-prod",
       "enabled": true
     }
   }

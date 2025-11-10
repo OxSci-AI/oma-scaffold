@@ -56,7 +56,8 @@ class AgentTemplate(ITaskExecutor):
         self.adapter = adapter
         # Create LLM instance with appropriate model and temperature
         self.llm = self.adapter.create_llm(
-            model="openrouter/openai/gpt-4o",  # Choose appropriate model
+            # set model in orchestrator.agents.context or use default
+            model=context.get_shared_data("model", "openrouter/openai/gpt-4o-mini"),
             temperature=0.1,  # Adjust based on creativity needs (0.0 = deterministic, 1.0 = creative)
         )
         self.logger = logging.getLogger(__name__)
@@ -87,7 +88,9 @@ class AgentTemplate(ITaskExecutor):
             input={
                 # Define input parameters and their descriptions
                 # Example: "file_id": "string - file ID to process",
-            },
+                # model will inject by orchestrator from orchestrator.agents.context
+                  "model": "string - LLM model to use (default: openrouter/openai/gpt-4o-mini)",
+          },
             output={
                 # Define output parameters and their descriptions
                 # Example: "result_id": "string - result ID",
