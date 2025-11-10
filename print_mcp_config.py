@@ -68,12 +68,13 @@ def print_server_list(env: str, mcp_config: MCPConfig) -> None:
     print(f"ENV: {env.upper()}")
     for i, (server_name, config) in enumerate(enabled_servers.items(), 1):
         url = config.get_server_url()
-        print(f"{i}. {server_name}")
-        print(f"    Status: ✅ Enabled")
+        print(f"{i}. {server_name} ✅")
         print(f"    URL: {url}")
 
 
-async def print_registered_tools(server_name: Optional[str] = None, detail: bool = False) -> None:
+async def print_registered_tools(
+    server_name: Optional[str] = None, detail: bool = False
+) -> None:
     """Print tools registered in tool_registry
 
     Args:
@@ -88,7 +89,6 @@ async def print_registered_tools(server_name: Optional[str] = None, detail: bool
     print("=" * 80)
 
     # Trigger MCP tool discovery
-    print("Discovering MCP tools...")
     await tool_registry.discover_mcp_tools_if_needed()
 
     # Get all tool classes
@@ -146,7 +146,7 @@ async def print_registered_tools(server_name: Optional[str] = None, detail: bool
                 print(f"  Output Schema:")
                 schema_str = json.dumps(tool_info.output_schema, indent=4)
                 # Indent each line for better formatting
-                for line in schema_str.split('\n'):
+                for line in schema_str.split("\n"):
                     print(f"    {line}")
             else:
                 print(f"  Output Schema: Not defined")
@@ -175,22 +175,18 @@ Examples:
 
   # Print tools with detailed metadata
   ENV=test poetry run python print_mcp_config.py --tools --detail
-        """
+        """,
     )
     parser.add_argument(
-        "--tools",
-        action="store_true",
-        help="Discover and print tools from MCP servers"
+        "--tools", action="store_true", help="Discover and print tools from MCP servers"
     )
     parser.add_argument(
-        "--server",
-        type=str,
-        help="Specific server name to query (use with --tools)"
+        "--server", type=str, help="Specific server name to query (use with --tools)"
     )
     parser.add_argument(
         "--detail",
         action="store_true",
-        help="Print detailed tool metadata including input parameters and output schemas (use with --tools)"
+        help="Print detailed tool metadata including input parameters and output schemas (use with --tools)",
     )
 
     args = parser.parse_args()
@@ -198,8 +194,8 @@ Examples:
     # Get environment from app.core.config (same as app runtime)
     env = str(config.ENV).lower()
     # Handle enum value if ENV is Environment enum
-    if '.' in env:
-        env = env.split('.')[-1]
+    if "." in env:
+        env = env.split(".")[-1]
 
     # Load MCP configuration
     try:
@@ -217,6 +213,7 @@ Examples:
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
