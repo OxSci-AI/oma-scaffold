@@ -139,17 +139,17 @@ def setup_service():
         # Update pyproject.toml
         print("Configuring pyproject.toml...")
         pyproject_path = target_dir / "pyproject.toml"
-        content = pyproject_path.read_text()
+        content = pyproject_path.read_text(encoding='utf-8')
         content = content.replace('name = "oma-service-template"', f'name = "{folder_name}"')
         content = content.replace('description = "OMA Agent Service Template"', f'description = "{description}"')
-        pyproject_path.write_text(content)
+        pyproject_path.write_text(content, encoding='utf-8')
 
         # Create agent file from template
         print(f"Creating agent file: app/agents/{agent_file}")
         agent_template_path = target_dir / "app" / "agents" / "agent_template.py"
         agent_path = target_dir / "app" / "agents" / agent_file
 
-        agent_content = agent_template_path.read_text()
+        agent_content = agent_template_path.read_text(encoding='utf-8')
         agent_content = agent_content.replace("AgentTemplate", agent_class)
         agent_content = agent_content.replace('agent_role: str = "agent_template"', f'agent_role: str = "{agent_name}"')
         agent_content = agent_content.replace(
@@ -160,14 +160,14 @@ def setup_service():
             f'description="{agent_class} agent"',
         )
 
-        agent_path.write_text(agent_content)
+        agent_path.write_text(agent_content, encoding='utf-8')
 
         # Remove template file
         agent_template_path.unlink()
 
         # Create __init__.py for agents
         agents_init = target_dir / "app" / "agents" / "__init__.py"
-        agents_init.write_text(f'from .{agent_name} import {agent_class}\n\n__all__ = ["{agent_class}"]\n')
+        agents_init.write_text(f'from .{agent_name} import {agent_class}\n\n__all__ = ["{agent_class}"]\n', encoding='utf-8')
 
         # Create __init__.py for app
         app_init = target_dir / "app" / "__init__.py"
@@ -176,7 +176,7 @@ def setup_service():
         # Update main.py
         print("Updating main.py...")
         main_path = target_dir / "app" / "core" / "main.py"
-        main_content = main_path.read_text()
+        main_content = main_path.read_text(encoding='utf-8')
 
         # Add import after the TODO comment
         import_line = f"from app.agents.{agent_name} import {agent_class}"
@@ -191,12 +191,12 @@ def setup_service():
             f"agent_executors = [\n        {agent_class},\n    ]",
         )
 
-        main_path.write_text(main_content)
+        main_path.write_text(main_content, encoding='utf-8')
 
         # Update test_agents.py
         print("Updating test_agents.py...")
         test_path = target_dir / "tests" / "test_agents.py"
-        test_content = test_path.read_text()
+        test_content = test_path.read_text(encoding='utf-8')
 
         # Add import
         import_line = f"from app.agents.{agent_name} import {agent_class}"
@@ -224,7 +224,7 @@ def test_{agent_name}():
             f'test_map = {{\n        "{agent_name}": test_{agent_name},\n    }}',
         )
 
-        test_path.write_text(test_content)
+        test_path.write_text(test_content, encoding='utf-8')
 
         # Create sample directory
         print("Creating sample directory...")
@@ -289,7 +289,7 @@ Thumbs.db
 .env.local
 """
         gitignore_path = target_dir / ".gitignore"
-        gitignore_path.write_text(gitignore_content)
+        gitignore_path.write_text(gitignore_content, encoding='utf-8')
 
         print()
         print("=" * 70)
