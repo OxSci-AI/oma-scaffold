@@ -128,7 +128,62 @@ chmod +x entrypoint-dev.sh
 poetry install
 ```
 
-### 3. Development
+### 3. Configure MCP Tools (Optional)
+
+MCP (Model Context Protocol) tools provide external capabilities to your agents, such as article processing, journal insights, and more.
+
+#### Understanding MCP Configuration
+
+MCP servers are configured through JSON files in `app/config/mcp/`:
+
+- **base.json**: Default configuration for all MCP servers (defines all available servers with default settings)
+- **dev.json**: Development environment overrides (enables local MCP servers)
+- **test.json**: Test environment overrides (uses cloud MCP services)
+- **prod.json**: Production environment overrides
+
+The configuration system uses inheritance: environment-specific files (dev/test/prod) override values from base.json.
+
+#### Checking Available MCP Tools
+
+Use the `print_mcp_config.py` script to inspect configured MCP servers and their available tools:
+
+```bash
+# List all configured MCP servers
+poetry run python print_mcp_config.py
+
+# List all available tools from MCP servers
+poetry run python print_mcp_config.py --tools
+
+# List tools with detailed metadata (input parameters, output schemas)
+poetry run python print_mcp_config.py --tools --detail
+
+# Filter tools by specific MCP server
+poetry run python print_mcp_config.py --tools --server journal-insight-service
+
+# Combine filters with detailed output
+poetry run python print_mcp_config.py --tools --server mcp-article-processing --detail
+```
+
+#### Configuring MCP Servers
+
+1. **Development (Local)**: Edit `app/config/mcp/dev.json` to enable/disable MCP servers
+   ```json
+   {
+     "servers": {
+       "mcp-article-processing": {
+         "enabled": true
+       }
+     }
+   }
+   ```
+
+2. **Test/Production (Cloud)**: MCP servers can use proxy mode for cloud access
+   - Set `"proxy": true` in environment-specific config
+   - Configure `MCP_PROXY_URL` and `PROXY_API_KEY` environment variables
+
+For local development, ensure the required MCP services are running on their configured ports (see base.json).
+
+### 4. Development
 
 #### Run Tests
 
@@ -166,6 +221,12 @@ oma-{service-name}/
 │   │   ├── __init__.py
 │   │   ├── config.py             # Service configuration
 │   │   └── main.py               # FastAPI application entry point
+│   ├── config/
+│   │   └── mcp/                  # MCP tool configuration
+│   │       ├── base.json         # Base MCP server definitions
+│   │       ├── dev.json          # Development environment overrides
+│   │       ├── test.json         # Test environment overrides
+│   │       └── prod.json         # Production environment overrides
 │   ├── agents/
 │   │   └── {agent_name}.py       # Your agent implementation
 │   └── tools/
@@ -178,9 +239,86 @@ oma-{service-name}/
 │   └── extensions.json           # Recommended VS Code extensions
 ├── Dockerfile                     # Multi-stage Docker build
 ├── entrypoint-dev.sh             # CodeArtifact configuration script
+├── print_mcp_config.py           # MCP configuration and tool inspection utility
 ├── pyproject.toml                # Project dependencies and configuration
 └── README.md                      # This file
 ```
+
+## MCP Tool Configuration
+
+### What are MCP Tools?
+
+MCP (Model Context Protocol) tools are external services that provide specialized capabilities to your agents:
+
+- **journal-insight-service**: Article search, journal information, PDF processing
+- **mcp-article-processing**: Structured content processing, section management
+
+MCP tools are automatically discovered and registered at startup based on your configuration.
+
+### Configuration Files
+
+MCP servers are configured using JSON files in `app/config/mcp/`:
+
+1. **base.json**: Defines all available MCP servers with complete configuration
+   - Server endpoints (service_name, port)
+   - Connection settings (timeout, retry_interval)
+   - Proxy configuration (for cloud access)
+   - Default: all servers disabled
+
+2. **Environment-specific files** (dev.json, test.json, prod.json):
+   - Override base.json settings
+   - Enable/disable servers per environment
+   - Set environment-specific URLs or proxy settings
+
+Example base.json:
+
+```json
+{
+  "servers": {
+    "journal-insight-service": {
+      "enabled": false,
+      "service_name": "journal-insight-service-prod",
+      "port": 8010,
+      "timeout": 30,
+      "proxy": false,
+      "proxy_url": "${MCP_PROXY_URL}",
+      "api_key": "${PROXY_API_KEY}"
+    }
+  }
+}
+```
+
+Example dev.json (only overrides):
+
+```json
+{
+  "servers": {
+    "journal-insight-service": {
+      "enabled": true
+    }
+  }
+}
+```
+
+### Using MCP Tools in Agents
+
+MCP tools are automatically available to all agents through the tool registry. You don't need to import them explicitly - just reference them by name in your agent configuration:
+
+```python
+from crewai import Agent, Task
+
+agent = Agent(
+    role="Research Assistant",
+    goal="Find and analyze academic articles",
+    tools=[
+        "search_articles",      # MCP tool from journal-insight-service
+        "get_article",          # MCP tool from journal-insight-service
+        "get_pdf_pages"         # MCP tool from mcp-article-processing
+    ]
+)
+```
+
+Use `print_mcp_config.py --tools` to see all available MCP tools and their descriptions.
 
 ## Agent Development
 
@@ -224,6 +362,7 @@ See `tests/test_agents.py` for examples.
 ### Building Docker Image
 
 The CI/CD workflow automatically builds and pushes Docker images when:
+
 - Tags matching `v*` are pushed
 - Manually triggered via workflow_dispatch
 
@@ -244,6 +383,7 @@ docker run -p 8080:8080 \
 Service configuration is managed through environment variables. See `app/core/config.py` for available options.
 
 Key environment variables:
+
 - `SERVICE_PORT`: Port to run the service (default: 8080)
 - `ENV`: Environment (development/test/production)
 - `LOG_LEVEL`: Logging level
@@ -256,7 +396,6 @@ This template integrates:
 - **CrewAI**: Multi-agent orchestration framework
 - **oxsci-oma-core**: Core OMA agent functionality
 - **oxsci-shared-core**: Shared utilities and configuration
-
 
 ## License
 
