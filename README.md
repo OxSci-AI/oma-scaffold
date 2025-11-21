@@ -145,23 +145,32 @@ The configuration system uses inheritance: environment-specific files (dev/test/
 
 #### Checking Available MCP Tools
 
-Use the `print_mcp_config.py` script to inspect configured MCP servers and their available tools:
+Use the `tool_helper.py` script to inspect configured MCP servers and their available tools:
 
 ```bash
 # List all configured MCP servers
-poetry run python print_mcp_config.py
+poetry run python tool_helper.py
 
-# List all available tools from MCP servers
-poetry run python print_mcp_config.py --tools
+# List all available tools from MCP servers (basic info)
+poetry run python tool_helper.py --tools
 
-# List tools with detailed metadata (input parameters, output schemas)
-poetry run python print_mcp_config.py --tools --detail
+# List specific tools by name
+poetry run python tool_helper.py --tools search_articles get_article
+
+# List tools with input parameters only
+poetry run python tool_helper.py --tools --input
+
+# List tools with detailed metadata (input parameters + output schemas)
+poetry run python tool_helper.py --tools --detail
 
 # Filter tools by specific MCP server
-poetry run python print_mcp_config.py --tools --server journal-insight-service
+poetry run python tool_helper.py --tools --server journal-insight-service
 
-# Combine filters with detailed output
-poetry run python print_mcp_config.py --tools --server mcp-article-processing --detail
+# Combine options: specific tools with input parameters
+poetry run python tool_helper.py --tools search_articles fetch_article --input
+
+# Combine options: server filter with detailed output
+poetry run python tool_helper.py --tools --server mcp-article-processing --detail
 ```
 
 #### Configuring MCP Servers
@@ -239,7 +248,7 @@ oma-{service-name}/
 │   └── extensions.json           # Recommended VS Code extensions
 ├── Dockerfile                     # Multi-stage Docker build
 ├── entrypoint-dev.sh             # CodeArtifact configuration script
-├── print_mcp_config.py           # MCP configuration and tool inspection utility
+├── tool_helper.py                # MCP tool inspection utility (wrapper for oma-core)
 ├── pyproject.toml                # Project dependencies and configuration
 └── README.md                      # This file
 ```
@@ -318,7 +327,15 @@ agent = Agent(
 )
 ```
 
-Use `print_mcp_config.py --tools` to see all available MCP tools and their descriptions.
+**Discovering Available Tools:**
+
+```bash
+# See all available MCP tools and their descriptions
+poetry run python tool_helper.py --tools
+
+# Check specific tools with input parameters
+poetry run python tool_helper.py --tools search_articles get_article --input
+```
 
 ## Agent Development
 

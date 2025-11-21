@@ -103,6 +103,7 @@ class AgentTemplate(ITaskExecutor):
         try:
             self.logger.info(f"Starting {self.agent_role} execution")
             crew_instance = self.crew()
+            # ! must use kickoff_async() NOT kickoff() to avoid blocking
             result = await crew_instance.kickoff_async()
             self.logger.info(f"{self.agent_role} execution completed")
 
