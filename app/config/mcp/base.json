@@ -24,7 +24,7 @@
     },
     "mcp-journal-insight": {
       "enabled": false,
-      "service_name": "mcp-journal-insight-test",
+      "service_name": "mcp-journal-insight-prod",
       "port": 8060,
       "timeout": 30,
       "max_startup_wait": 300,

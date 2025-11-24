@@ -4,7 +4,7 @@
       "enabled": true,
       "proxy": true
     },
-    "journal-insight-service": {
+    "mcp-journal-insight": {
       "enabled": true,
       "proxy": true
     }
