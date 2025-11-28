@@ -8,9 +8,18 @@ through package updates without requiring script changes.
 
 Usage:
     # All arguments are passed through to the underlying inspector
-    poetry run python tool_helper.py --tools
-    poetry run python tool_helper.py --tools tool1 tool2 --input
-    poetry run python tool_helper.py --tools --server mcp-article-processing --detail
+
+  # default OMA protocol
+  poetry run python tool_helper.py --tools --input
+
+  # Claude Code CLI protocol
+  poetry run python tool_helper.py --tools -p cc_cli --input
+
+  # Claude Code SDK protocol
+  poetry run python tool_helper.py --tools -p cc_sdk --detail
+
+  # View specific tool
+  poetry run python tool_helper.py --tools get_pdf_pages -p cc_cli --input
 
 For detailed usage, run: poetry run python tool_helper.py --help
 """

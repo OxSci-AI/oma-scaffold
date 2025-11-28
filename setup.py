@@ -127,7 +127,7 @@ def setup_service():
         # Copy all files and directories except setup.py
         print("Copying template files...")
         for item in script_dir.iterdir():
-            if item.name in ["setup.py", ".git", "__pycache__", ".DS_Store"]:
+            if item.name in ["setup.py", "install.py", ".git", "__pycache__", ".DS_Store"]:
                 continue
 
             dest = target_dir / item.name

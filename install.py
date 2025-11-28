@@ -516,7 +516,6 @@ def setup_service(
                     ".git",
                     "__pycache__",
                     ".DS_Store",
-                    "README.md",
                 ]:
                     continue
 
@@ -664,9 +663,21 @@ python tests/test_agents.py --test {agent_name}
 poetry run uvicorn app.core.main:app --reload --port 8080
 ```
 
-## Documentation
+Access the API documentation at: http://localhost:8080/docs
 
-For detailed documentation, see: https://github.com/{GITHUB_REPO}
+## Development Documentation
+
+For comprehensive development documentation including:
+- MCP Tool Configuration
+- Agent Development Guide
+- Testing Instructions
+- Deployment Guide
+
+See [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md)
+
+## Scaffold Template
+
+For scaffold usage and installation options, see: https://github.com/{GITHUB_REPO}
 """
             readme_path = target_dir / "README.md"
             readme_path.write_text(readme_content, encoding='utf-8')
