@@ -1,0 +1,97 @@
+# Multi-stage build for Agent Service with Claude Code CLI
+# This Dockerfile extends the base agent service with Claude Code integration
+
+# Stage 1: Builder
+FROM python:3.10-slim AS builder
+
+WORKDIR /build
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    build-essential \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+ENV PATH="/root/.local/bin:$PATH"
+
+# Copy project files
+COPY pyproject.toml poetry.lock ./
+
+# Install dependencies
+RUN poetry config virtualenvs.create false && \
+    poetry install --no-interaction --no-ansi --no-root --only main
+
+# Stage 2: Runtime
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install runtime system dependencies
+# - curl: for health checks and downloads
+# - nodejs npm: required for Claude Code CLI (npx)
+# - jq: for JSON processing in scripts
+# - git: required by Claude Code for version control operations
+RUN apt-get update && apt-get install -y \
+    curl \
+    nodejs \
+    npm \
+    jq \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Install Claude Code CLI globally
+# The CLI will be installed via npx on first use, but we can pre-install it here
+RUN npm install -g @anthropic-ai/claude-code
+
+# Copy application code
+COPY app ./app
+
+# Create non-root user and setup directories
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /home/appuser/.claude && \
+    mkdir -p /app/tmp_logs && \
+    chown -R appuser:appuser /app /home/appuser
+
+# Switch to non-root user
+USER appuser
+
+# Set Claude Code configuration via environment variables
+# These will be overridden at runtime with actual values
+ENV ANTHROPIC_BASE_URL=""
+ENV ANTHROPIC_AUTH_TOKEN=""
+
+# Create startup script to configure Claude Code environment
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+# Configure Claude Code environment variables\n\
+if [ -n "$ANTHROPIC_AUTH_TOKEN" ]; then\n\
+    echo "Configuring Claude Code environment..."\n\
+    echo "export ANTHROPIC_BASE_URL=\"$ANTHROPIC_BASE_URL\"" >> ~/.bashrc\n\
+    echo "export ANTHROPIC_AUTH_TOKEN=\"$ANTHROPIC_AUTH_TOKEN\"" >> ~/.bashrc\n\
+    source ~/.bashrc\n\
+    echo "Claude Code configured successfully"\n\
+else\n\
+    echo "Warning: ANTHROPIC_AUTH_TOKEN not set, Claude Code will not be configured"\n\
+fi\n\
+\n\
+# Start application\n\
+exec uvicorn app.main:app --host 0.0.0.0 --port 8080\n\
+' > /home/appuser/start.sh && chmod +x /home/appuser/start.sh
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Start application with Claude Code configuration
+CMD ["/bin/bash", "/home/appuser/start.sh"]

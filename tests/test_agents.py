@@ -1,83 +1,66 @@
 #!/usr/bin/env python3
 """
-Test file for OMA Agents
+Sample Test File - Demonstrates Simplified Test Writing
 
-This file uses the decorator-based testing approach from oxsci-oma-core.
-See oxsci-oma-core test_module documentation for more details.
-
-Usage:
-    # Run specific test
-    python tests/test_agents.py --test my_agent
-
-    # Run integration test
-    python tests/test_agents.py --integration full_pipeline
-
-    # Run all tests
-    python tests/test_agents.py --all
-
-    # Enable verbose logging
-    python tests/test_agents.py --test my_agent -v
+This file shows how to use the new decorator-based testing approach
 """
 
 import sys
-from pathlib import Path
+
+from app.agents.sample_claude_code_agent import SampleClaudeCodeAgent
 
 from oxsci_oma_core.test_module import agent_test, integration_test, run_tests_from_cli
 
-# Import your agent classes here
-# Example:
-# from app.agents.my_agent import MyAgent
+# Import your crew classes
+from app.agents.sample_pdf_parser_agent import SampleParserCrew
+from app.agents.sample_analysis_agent import SampleAnalysisCrew
 
 
 # ============================================================================
-# Single Agent Tests
+# Single Crew Tests
 # ============================================================================
 
 
-# Example single agent test with PDF sample
-# @agent_test(sample_pdf="sample/sample.pdf")
-# def test_my_agent():
-#     """Test MyAgent - processes PDF documents"""
-#     return MyAgent
-
-
-# Example agent test with custom input
-# @agent_test(
-#     task_input={
-#         "param1": "value1",
-#         "param2": "value2",
-#     },
-# )
-# def test_my_agent_with_input():
-#     """Test MyAgent with custom input parameters"""
-#     return MyAgent
+@agent_test(
+    verbose="stdout",
+    task_input={
+        "file_id": "eef0e45a-29ba-47d5-b339-c73bb5d07789",  # Real file ID from database for MCP server
+        "user_id": "659c930a-a1a2-4752-bc55-0c2da52bb8a7",  # Test user ID
+        "model": "openrouter/openai/gpt-4o-mini",
+    },
+)
+def test_sample_parser():
+    """Test SimpleReadCrew - PDF processing with MCP server"""
+    return SampleParserCrew
 
 
 # ============================================================================
-# Integration Tests
+# Custom Input Context Example
 # ============================================================================
 
 
-# Example integration test with multiple agents
-# @integration_test(
-#     crews=[
-#         FirstAgent,
-#         SecondAgent,
-#         ThirdAgent,
-#     ],
-#     sample_pdf="sample/sample.pdf",
-# )
-# def test_full_pipeline():
-#     """Test full processing pipeline
-#
-#     Tests:
-#     - Step 1: FirstAgent processes PDF
-#     - Step 2: SecondAgent analyzes content
-#     - Step 3: ThirdAgent generates report
-#
-#     Data flows automatically between agents via shared context
-#     """
-#     pass
+@agent_test(
+    verbose="stdout",
+    task_input={
+        "structured_content_overview_id": "725e6776-1fdc-4cbf-a615-90b72b78c548",
+    },
+)
+def test_sample_analysis():
+    """Test with custom task input"""
+    return SampleAnalysisCrew
+
+
+@agent_test(
+    verbose="stdout",
+    task_input={
+        "file_id": "eef0e45a-29ba-47d5-b339-c73bb5d07789",  # Same file as simple_read_crew
+        "user_id": "659c930a-a1a2-4752-bc55-0c2da52bb8a7",  # Test user ID
+        "model": "openrouter/openai/gpt-4o-mini",
+    },
+)
+def test_claude_code_agent():
+    """Test PDF processing with enhanced agent (Claude Code backend)"""
+    return SampleClaudeCodeAgent
 
 
 # ============================================================================
@@ -86,23 +69,32 @@ from oxsci_oma_core.test_module import agent_test, integration_test, run_tests_f
 
 
 def main():
-    """CLI entry point for running tests"""
+    """CLI entry point for running tests
+
+    Usage:
+        # Run specific test
+        python tests/test_sample.py --test read
+        python tests/test_sample.py --test search
+        python tests/test_sample.py --test write
+
+        # Run integration test
+        python tests/test_sample.py --integration pipeline
+
+        # Run all tests
+        python tests/test_sample.py --all
+
+        # Enable verbose logging
+        python tests/test_sample.py --test read -v
+    """
     # Define test map
     test_map = {
-        # Add your test functions here
-        # Example:
-        # "my_agent": test_my_agent,
-        # "my_agent_with_input": test_my_agent_with_input,
-    }
-
-    integration_tests = {
-        # Add your integration test functions here
-        # Example:
-        # "full_pipeline": test_full_pipeline,
+        "parser": test_sample_parser,
+        "analysis": test_sample_analysis,
+        "cca": test_claude_code_agent,
     }
 
     # Run tests from CLI
-    sys.exit(run_tests_from_cli(test_map, integration_tests))
+    sys.exit(run_tests_from_cli(test_map))
 
 
 if __name__ == "__main__":
