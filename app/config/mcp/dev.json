@@ -5,8 +5,12 @@
       "proxy": true
     },
     "mcp-journal-insight": {
-      "enabled": false,
+      "enabled": true,
       "proxy": true
+    },
+    "mcp-article-analysis": {
+      "enabled": true,
+      "url_override": "http://localhost:8063"
     }
   }
 }

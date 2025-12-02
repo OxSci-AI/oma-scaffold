@@ -7,6 +7,7 @@ This file shows how to use the new decorator-based testing approach
 
 import sys
 
+from app.agents.sample_cca_analysis import SampleCCAAnalysis
 from app.agents.sample_claude_code_agent import SampleClaudeCodeAgent
 
 from oxsci_oma_core.test_module import agent_test, integration_test, run_tests_from_cli
@@ -63,6 +64,17 @@ def test_claude_code_agent():
     return SampleClaudeCodeAgent
 
 
+@agent_test(
+    verbose="stdout",
+    task_input={
+        "structured_content_overview_id": "725e6776-1fdc-4cbf-a615-90b72b78c548",
+    },
+)
+def test_cca_analysis():
+    """Test PDF processing with enhanced agent (Claude Code backend)"""
+    return SampleCCAAnalysis
+
+
 # ============================================================================
 # CLI Entry Point
 # ============================================================================
@@ -91,6 +103,7 @@ def main():
         "parser": test_sample_parser,
         "analysis": test_sample_analysis,
         "cca": test_claude_code_agent,
+        "cca_analysis": test_cca_analysis,
     }
 
     # Run tests from CLI
