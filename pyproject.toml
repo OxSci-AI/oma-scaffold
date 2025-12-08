@@ -38,8 +38,9 @@ flake8 = ">=6.1.0"
 mypy = ">=1.6.1"
 # For local development of oxsci-shared-core, uncomment below and comment out the main dependency
 # oxsci-oma-core = { path = "../oxsci-oma-core", extras = [
-#     "crewai",
+#     "langgraph",
 #     "claude",
+#     "crewai",
 # ], develop = true }
 
 [tool.poetry.group.test]

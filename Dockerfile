@@ -35,8 +35,8 @@ COPY --from=dependencies /app/.venv /app/.venv
 
 # Common runtime environment variables for agent
 ENV SERVICE_PORT=8080 \
-    ENV=test
-
+    ENV=test \
+    CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS="1"
 EXPOSE ${SERVICE_PORT}
 
 # Copy application source

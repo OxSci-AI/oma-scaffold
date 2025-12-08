@@ -8,12 +8,10 @@ Creates a single section to verify agent can run and call tools.
 
 from typing import Dict, Any
 
-from crewai.project import CrewBase
 
 from app.core.config import config
 
 from oxsci_oma_core import OMAContext
-from oxsci_oma_core.adapter.crew_ai import CrewAIToolAdapter
 from oxsci_oma_core.models.adapter import ITaskExecutor
 from oxsci_oma_core.models.agent_config import AgentConfig
 
@@ -30,16 +28,14 @@ else:
     logger.info("Using Claude Code CLI mode (default)")
 
 
-@CrewBase
 class SampleClaudeCodeAgent(ITaskExecutor):
     """Simple Claude Code Agent demo - creates one section"""
 
     agent_role: str = "claude_code_demo"
 
-    def __init__(self, context: OMAContext, adapter: CrewAIToolAdapter):
+    def __init__(self, context: OMAContext):
         """Initialize the agent with context and adapters"""
         self.context = context
-        self.adapter = adapter
         self.logger = logger
 
     @classmethod

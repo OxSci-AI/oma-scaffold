@@ -36,10 +36,9 @@ class SampleCCAAnalysis(ITaskExecutor):
 
     agent_role: str = "cca_comparative_analysis"
 
-    def __init__(self, context: OMAContext, adapter: CrewAIToolAdapter):
+    def __init__(self, context: OMAContext):
         """Initialize the agent with context and adapters"""
         self.context = context
-        self.adapter = adapter
         self.logger = logger
 
     @classmethod
@@ -84,7 +83,9 @@ class SampleCCAAnalysis(ITaskExecutor):
             # Get structured_content_overview_id from context
             overview_id = self.context.get_shared_data("structured_content_overview_id")
             if not overview_id:
-                raise ValueError("structured_content_overview_id is required in context")
+                raise ValueError(
+                    "structured_content_overview_id is required in context"
+                )
 
             self.logger.info(f"Processing overview: {overview_id}")
 
