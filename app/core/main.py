@@ -6,12 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import config
 from oxsci_shared_core.logging import logger
-from oxsci_shared_core.error_handler import ExceptionHandlerMiddleware
-from oxsci_shared_core import default_router
+from oxsci_shared_core.middleware import ExceptionHandlerMiddleware
+from oxsci_shared_core.router import default_router
 
 # Import OMA-Core components
-from oxsci_oma_core.schedule.task_scheduler import TaskScheduler
-from oxsci_oma_core.adapter.crew_ai import CrewAIToolAdapter
+from oxsci_oma_core.schedule import TaskScheduler
+
+# from oxsci_oma_core.adapter.crew_ai import CrewAIToolAdapter
 
 # Import agent executors
 # TODO: Add your agent imports here
@@ -43,7 +44,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             # Create TaskScheduler (automatically retrieves agent_config)
             scheduler = TaskScheduler(
                 executor_class=executor_class,  # type: ignore
-                adapter_class=CrewAIToolAdapter,
+                # adapter_class=CrewAIToolAdapter, # CCA not required
+                adapter_class=None,  # CCA not required
             )
 
             await scheduler.start()
